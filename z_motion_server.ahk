@@ -1,5 +1,5 @@
 ﻿;@Ahk2Exe-SetMainIcon C:\Dih\zIco\2motion.ico
-Menu,	Tray, NoStandard
+;~ Menu,	Tray, NoStandard
 FileInstall,	C:\Dih\zIco\2motion.ico, %A_ScriptDir%\Log\2motion.ico,1
 FileInstall,	C:\Dih\zIco\2motionp.ico, %A_ScriptDir%\Log\2motionp.ico,1
 ToolTip	Conexões
@@ -26,21 +26,19 @@ return
 		data			:=	SubStr(p_foscam[9],InStr(p_foscam[9],"_")+1,8)
 		hora			:=	SubStr(p_foscam[9],InStr(p_foscam[9],"_")+10,6)
 		ip	=
-		f					=
-		(
-			SELECT [ip]	FROM	[MotionDetection].[dbo].[Cameras]	WHERE	[mac]	=	'%mac%'
-		)
+		f					=		SELECT [ip]	FROM	[MotionDetection].[dbo].[Cameras]	WHERE	[mac]	=	'%mac%'
 		f					:=	adosql(con,f)
 		ip					:=	f[2,1]
 		if(StrLen(ip)=0)	{	;	Gera log se a consulta não retornar nome de câmera
-			FileAppend,	 %	agora() " | Mac = " mac " | " A_LoopFileFullPath "`n", %A_ScriptDir%\Log\Foscam.txt
-			FileMove,	%A_LoopFileFullPath%,	D:\FTP\monitoramento\FTP\AddBD\%A_LoopFileName%.jpg
+			FileAppend,	%	agora() " | Mac = " mac " | Data = " data " | Hora = " hora " | IP = " ip "`n", D:\FTP\Monitoramento\FTP\Log\Não achou no DB.txt
+			FileMove,	%A_LoopFileFullPath%,	D:\FTP\monitoramento\FTP\AddBD\MAC - %mac% - %A_LoopFileName%.jpg
+		}		else		{
+			FileAppend,	%	agora() "|Mac = " mac "|" A_LoopFileFullPath "`n", D:\FTP\Monitoramento\FTP\Log\Geradas\Foscam %A_MM% - %A_DD%.txt
+			FileMove,	%A_LoopFileFullPath%, %Motion%%ip%_%data%-%hora%.jpg,	1
 		}
-		else
-			FileMove,	%A_LoopFileFullPath%, %Motion%%ip%_%data%-%hora%.jpg
 	}
 ;}
-	;{	Dahua
+		;{	Dahua
 Loop, Files, %Motion%Dahua\*.jpg, R
 {
 	StringSplit,	path,	A_LoopFileFullPath,	\
@@ -48,13 +46,12 @@ Loop, Files, %Motion%Dahua\*.jpg, R
 		horario			:=	StrReplace(SubStr(path10,1,instr(path10,"[")-1),".")
 		ip						:=	strreplace(path7,"_",".")
 		novonome		:=	ip "_" strreplace(path8,"-") "-" horario ".jpg"
-	}
-	else
-	{
+	}	else	{
 		segundos		:=	SubStr(path13,1,instr(path13,"[")-1)
 		ip						:=	strreplace(path7,"_",".")
 		novonome		:=	ip "_" strreplace(path8,"-") "-" path11 path12 segundos ".jpg"
 	}
+	FileAppend,	 %	agora() " | "	novonome, D:\FTP\Monitoramento\FTP\Log\Geradas\Dahua %A_MM% - %A_DD%.txt
 	FileMove,	%A_LoopFileFullPath%,	%Motion%%novonome%,	1
 }	;}
 	;{	Limpa folders vazios
@@ -87,10 +84,9 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 		SELECT [nome],[Setor] FROM [MotionDetection].[dbo].[Cameras] WHERE ip = '%img1%'
 	)
 	r_s	:=	adosql(con,sql_setor)
-	Clipboard	:=	adosql_lq
 	if (	r_s.MaxIndex()-1 = 0	)	{	;---------------------------------------------------------------------------------------------------	Se não constar no CADASTRO, gera log e move
 		FileAppend,	% agora() " | " setor " | " img1 "`n", %A_ScriptDir%\Log\log - Câmeras sem Cadastro.txt
-		FileMove,	%A_LoopFileFullPath%,	D:\FTP\monitoramento\FTP\AddBD\%A_LoopFileName%.jpg
+		FileMove,	%A_LoopFileFullPath%,	D:\FTP\monitoramento\FTP\AddBD\IP - %img1% - %A_LoopFileName%.jpg
 		continue
 	}
 	local	:=	StrReplace(StrReplace(r_s[2,1],"`n"),"`r")	;-----------------------------------------------------------------------------------------------------------------	Nome da Câmera
@@ -103,7 +99,7 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 	else
 		ToolTip	;}
 	if(dia!=1)
-		if(SubStr(A_Now,9)>"060500"	AND	SubStr(A_Now,9)<"200500")
+		if(SubStr(A_Now,9)>"060500"	AND	SubStr(A_Now,9)<"20000")
 			FileAppend,	 %	agora() " | " setor " | " img1 " | " img "`t" local "`n", %A_ScriptDir%\Log\log FORA DA FAIXA DE HORÁRIO.txt
 	else
 		FileAppend,	%	agora() " | " setor " | " img1 " | " img "`t" local " `n", %A_ScriptDir%\Log\log %A_DD%_%A_MM%.txt
