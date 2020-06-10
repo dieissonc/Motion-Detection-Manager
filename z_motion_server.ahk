@@ -99,7 +99,7 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 	else
 		ToolTip	;}
 	if(dia!=1)
-		if(SubStr(A_Now,9)>"060500"	AND	SubStr(A_Now,9)<"20000")
+		if(SubStr(A_Now,9)>"060500"	AND	SubStr(A_Now,9)<"200000")
 			FileAppend,	 %	agora() " | " setor " | " img1 " | " img "`t" local "`n", %A_ScriptDir%\Log\log FORA DA FAIXA DE HORÁRIO.txt
 	else
 		FileAppend,	%	agora() " | " setor " | " img1 " | " img "`t" local " `n", %A_ScriptDir%\Log\log %A_DD%_%A_MM%.txt
