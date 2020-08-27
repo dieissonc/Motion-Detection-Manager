@@ -1,5 +1,5 @@
 ﻿;@Ahk2Exe-SetMainIcon C:\Dih\zIco\2motion.ico
-;~ Menu,	Tray, NoStandard
+Menu,	Tray, NoStandard
 FileInstall,	C:\Dih\zIco\2motion.ico, %A_ScriptDir%\Log\2motion.ico,1
 FileInstall,	C:\Dih\zIco\2motionp.ico, %A_ScriptDir%\Log\2motionp.ico,1
 ToolTip	Conexões
@@ -73,7 +73,13 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 	img =
 	local =
 	setor = 
-	StringSplit, img, A_LoopFileName,	_
+	if(instr(A_LoopFileName,"MOTION")>0)	{	;	Hikvision Settings
+		StringSplit, imgx, A_LoopFileName,	_
+		img	:=	imgx1 "_" SubStr(imgx3,1,8) "-" SubStr(imgx3,9,6)
+		StringSplit, img, img,	_
+	}
+	else
+		StringSplit, img, A_LoopFileName,	_
 	gosub	verificaInibidos	;--------------------------------------------------------------------------------------------------------------	Verifica se a câmera ainda está inibida
 	if(inibida=1)	{
 		FileAppend,	 %	agora() " | " img1 " inibida`n", %A_ScriptDir%\Log\log %A_DD%_%A_MM%.txt
