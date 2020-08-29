@@ -82,20 +82,21 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 }
 	gosub	verificaInibidos	;--------------------------------------------------------------------------------------------------------------	Verifica se a câmera ainda está inibida
 	if(inibida=1)	{
-		FileAppend,	 %	agora() " | " img1 " inibida`n", %A_ScriptDir%\Log\log %A_DD%_%A_MM%.txt
-		continue	;	alterado 03/05	-	Apenas IP e horário no LOG
+		continue
 	}
 	sql_setor	=	;----------------------------------------------------------------------------------------------------------------------------	Busca nome e setor da câmera
 	(
 		SELECT [nome],[Setor] FROM [MotionDetection].[dbo].[Cameras] WHERE ip = '%img1%'
 	)
 	r_s	:=	adosql(con,sql_setor)
-	if (	r_s.MaxIndex()-1 = 0	)	{	;---------------------------------------------------------------------------------------------------	Se não constar no CADASTRO, gera log e move
-		FileAppend,	% agora() " | " setor " | " img1 "`n", %A_ScriptDir%\Log\log - Câmeras sem Cadastro.txt
+	if (r_s.MaxIndex()-1 = 0)	{	;--------------------------------------------------------------------------------------------------------	Se não constar no CADASTRO, gera log e move
+		img2:=strreplace(strreplace(img2,"-"),".jpg")
+		cdii_hora:=SubStr(img2,1,4) "-" SubStr(img2,5,2) "-" SubStr(img2,7,2) " " SubStr(img2,9,2) ":" SubStr(img2,11,2) ":" SubStr(img2,13,2)
+		cdii_sql=INSERT INTO [MotionDetection].[dbo].[Geradas] VALUES ('%img1%',CONVERT(DateTime,'%cdii_hora%',120),'Sem Cadastro')
 		FileMove,	%A_LoopFileFullPath%,	D:\FTP\monitoramento\FTP\AddBD\IP - %img1% - %A_LoopFileName%.jpg
 		continue
 	}
-	local	:=	StrReplace(StrReplace(r_s[2,1],"`n"),"`r")	;-----------------------------------------------------------------------------------------------------------------	Nome da Câmera
+	local	:=	StrReplace(StrReplace(r_s[2,1],"`n"),"`r")	;---------------------------------------------------------------------------	Nome da Câmera
 	setor	:=	"000" r_s[2,2]	;---------------------------------------------------------------------------------------------------------	Operador 
 	if	(	setor = "000"	)		;--------------------------------------------------------------------------------------------------------------	Se não estiver registrada para algum operador, define como operador 6
 		setor = 0006
@@ -104,11 +105,19 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 		ToolTip,	%		img1	"_" img "_" local "`n"	agora() "`n" setor "`n`tModo dia = " dia,	10, 10
 	else
 		ToolTip	;}
-	if(dia!=1)
-		if(SubStr(A_Now,9)>"060500"	AND	SubStr(A_Now,9)<"200000")
-			FileAppend,	 %	agora() " | " setor " | " img1 " | " img "`t" local "`n", %A_ScriptDir%\Log\log FORA DA FAIXA DE HORÁRIO.txt
-	else
-		FileAppend,	%	agora() " | " setor " | " img1 " | " img "`t" local " `n", %A_ScriptDir%\Log\log %A_DD%_%A_MM%.txt
+	if(dia!=1)	{
+		if(SubStr(A_Now,9)>"060500"	AND	SubStr(A_Now,9)<"195500")	{
+			img2:=strreplace(strreplace(img2,"-"),".jpg")
+			cdii_hora:=SubStr(img2,1,4) "-" SubStr(img2,5,2) "-" SubStr(img2,7,2) " " SubStr(img2,9,2) ":" SubStr(img2,11,2) ":" SubStr(img2,13,2)
+			cdii_sql=INSERT INTO [MotionDetection].[dbo].[Geradas] VALUES ('%img1%',CONVERT(DateTime,'%cdii_hora%',120),'Faixa de Horário Incorreta')
+			cdii_sql:=adosql(con,cdii_sql)
+		} else {
+			img2:=strreplace(strreplace(img2,"-"),".jpg")
+			cdii_hora:=SubStr(img2,1,4) "-" SubStr(img2,5,2) "-" SubStr(img2,7,2) " " SubStr(img2,9,2) ":" SubStr(img2,11,2) ":" SubStr(img2,13,2)
+			cdii_sql=INSERT INTO [MotionDetection].[dbo].[Geradas] VALUES ('%img1%',CONVERT(DateTime,'%cdii_hora%',120),'%setor%')
+			cdii_sql:=adosql(con,cdii_sql)
+		}
+	}
 	FileMove,	%A_LoopFileFullPath%,	D:\FTP\monitoramento\FTP\%setor%\%img1%_%img%_%local%.jpg
 }	;}
 return	;}
@@ -128,6 +137,10 @@ i	=	SELECT	*	FROM	[MotionDetection].[dbo].[inibidos]	WHERE	ip	=	'%img1%'	AND	res
 ii	:=	adosql(con,i)
 if(ii.MaxIndex()-1	>=	1)	{
 	inibida	=	1
+	img2:=strreplace(strreplace(img2,"-"),".jpg")
+	cdii_hora:=SubStr(img2,1,4) "-" SubStr(img2,5,2) "-" SubStr(img2,7,2) " " SubStr(img2,9,2) ":" SubStr(img2,11,2) ":" SubStr(img2,13,2)
+	cdii_sql=INSERT INTO [MotionDetection].[dbo].[Geradas] VALUES ('%img1%',CONVERT(DateTime,'%cdii_hora%',120),'Inibido')
+	cdii_sql:=adosql(con,cdii_sql)
 	FileDelete,	%A_LoopFileFullPath%
 }
 else
@@ -155,7 +168,7 @@ return	;}
 	ix	=
 	(
 		UPDATE	[MotionDetection].[dbo].[inibidos]
-		SET			[restaurado]			=		GETDATE()
+		SET			[restaurado]			=		GETDATE(), [geradas]	=	''
 		WHERE	[encerraDia]			<=	'%rdia%'
 		AND		[encerraHorario]	<=	'%rsec%'
 		AND		[restaurado]	IS	NULL
