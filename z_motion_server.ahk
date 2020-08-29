@@ -73,13 +73,13 @@ Loop, Files, %motion%*.jpg	;{	Loop all files and distribute
 	img =
 	local =
 	setor = 
-	if(instr(A_LoopFileName,"MOTION")>0)	{	;	Hikvision Settings
+	if(instr(A_LoopFileName,"MOTION_DETECTION")>0)	{	;	Hikvision Settings
 		StringSplit, imgx, A_LoopFileName,	_
 		img	:=	imgx1 "_" SubStr(imgx3,1,8) "-" SubStr(imgx3,9,6)
 		StringSplit, img, img,	_
-	}
-	else
+	}	else	{
 		StringSplit, img, A_LoopFileName,	_
+}
 	gosub	verificaInibidos	;--------------------------------------------------------------------------------------------------------------	Verifica se a câmera ainda está inibida
 	if(inibida=1)	{
 		FileAppend,	 %	agora() " | " img1 " inibida`n", %A_ScriptDir%\Log\log %A_DD%_%A_MM%.txt
@@ -120,6 +120,7 @@ hort	:=	SubStr(StrReplace(img2,"-"),9,2)
 mint	:=	SubStr(StrReplace(img2,"-"),11,2)
 segt		:=	SubStr(StrReplace(img2,"-"),13,2)
 time	:=	anot "/" mest "/" diat " " hort ":" mint ":" segt
+;~ MsgBox % time	;	ERRO REFERENTE A DATAS, VERIFICAR AQUI
 last_image	=	UPDATE	[MotionDetection].[dbo].[Cameras]	SET	[last_md]	=	CONVERT(DATETIME, '%time%',120)	WHERE	ip	=	'%img1%'
 last_image	:=	adosql(con,last_image)
 inibida	=	0
